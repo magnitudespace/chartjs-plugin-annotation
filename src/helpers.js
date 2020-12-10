@@ -88,15 +88,32 @@ function createMouseEvent(type, previousEvent) {
 module.exports = function(Chart) {
 	var chartHelpers = Chart.helpers;
 
+	// Hiber Customized in regards to https://github.com/chartjs/chartjs-plugin-annotation/issues/265
 	function initConfig(config) {
-		config = chartHelpers.configMerge(Chart.Annotation.defaults, config);
-		if (chartHelpers.isArray(config.annotations)) {
-			config.annotations = config.annotations.map(function(annotation) {
-				annotation.label = chartHelpers.configMerge(Chart.Annotation.labelDefaults, annotation.label);
-				return chartHelpers.configMerge(Chart.Annotation.annotationDefaults, annotation);
-			});
-		}
-		return config;
+		const mergedConfig = Object.assign({}, Chart.Annotation.defaults);
+
+		Object.keys(mergedConfig).forEach(function(key) {
+			if (config[key]) {
+				if (Array.isArray(mergedConfig[key])) {
+					mergedConfig[key] = config[key].slice();
+				} else {
+					mergedConfig[key] = config[key];
+				}
+			}
+		});
+
+		// for annotation.label
+		mergedConfig.annotations.forEach(function(annotation) {
+			if (annotation.label) {
+				Object.keys(Chart.Annotation.labelDefaults).forEach(function(key) {
+					if (!annotation.label[key]) {
+						annotation.label[key] = Chart.Annotation.labelDefaults[key];
+					}
+				});
+			}
+		});
+
+		return mergedConfig;
 	}
 
 	function getScaleLimits(scaleId, annotations, scaleMin, scaleMax) {
